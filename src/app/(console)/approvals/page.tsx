@@ -4,11 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { EvidencePanel } from "@/components/console/EvidencePanel";
-import { VerifySiteButton } from "@/components/console/VerifySiteButton";
 import { ReviewActions } from "@/components/console/ReviewActions";
-import {
-  approveAchievement, rejectAchievement, revokeAchievement, verifyProjectSite,
-} from "@/lib/console/actions";
+import { approveAchievement, rejectAchievement, revokeAchievement } from "@/lib/console/actions";
 import { formatDate } from "@/lib/console/format";
 import { listPendingAchievements } from "@/lib/console/approvals";
 
@@ -68,16 +65,6 @@ export default async function ApprovalsPage() {
                       <p className="text-muted-foreground text-xs">XP at stake</p>
                     </div>
                   </div>
-
-                  {/* Only a launch claim has a site to verify; for everything else the badge would
-                      be answering a question nobody asked. */}
-                  {row.achievementType === "product_launched" && row.projectId ? (
-                    <VerifySiteButton
-                      projectId={row.projectId}
-                      verified={row.siteVerified}
-                      verify={verifyProjectSite}
-                    />
-                  ) : null}
 
                   <Separator />
 

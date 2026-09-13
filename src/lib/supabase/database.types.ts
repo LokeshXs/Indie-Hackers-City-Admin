@@ -509,9 +509,6 @@ export type Database = {
           owner_id: string
           project_type: string
           updated_at: string
-          verification_token: string
-          verified_at: string | null
-          verified_url: string | null
           website_url: string
         }
         Insert: {
@@ -521,9 +518,6 @@ export type Database = {
           owner_id: string
           project_type: string
           updated_at?: string
-          verification_token?: string
-          verified_at?: string | null
-          verified_url?: string | null
           website_url: string
         }
         Update: {
@@ -533,9 +527,6 @@ export type Database = {
           owner_id?: string
           project_type?: string
           updated_at?: string
-          verification_token?: string
-          verified_at?: string | null
-          verified_url?: string | null
           website_url?: string
         }
         Relationships: [
@@ -761,17 +752,6 @@ export type Database = {
           status: string
           xp_pending: number
           xp_total: number
-        }[]
-      }
-      record_site_verification: {
-        Args: {
-          checked_url: string
-          tag_found: boolean
-          target_project_id: string
-        }
-        Returns: {
-          verified_at: string
-          verified_url: string
         }[]
       }
       reject_achievement: {

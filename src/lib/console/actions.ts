@@ -3,14 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { checkSiteForToken } from "./site-check";
 
 export type ReviewResult = { ok: boolean; message: string };
 
 /** Postgres raises these as bare messages, the same convention the city app's RPCs use. */
 const MESSAGES: Record<string, string> = {
   achievement_not_found: "That claim no longer exists.",
-  project_not_found: "That project no longer exists.",
   achievement_not_pending: "Someone already decided this one. Reload the queue.",
   achievement_not_approved: "That claim is not approved, so there is nothing to take back.",
   xp_total_below_zero: "Revoking this would push the founder below zero XP. Award a correction first.",
@@ -97,45 +95,6 @@ export async function revokeAchievement(achievementId: number, note?: string): P
     message: result
       ? `Revoked. −${result.xp_removed} XP, leaving them on ${result.xp_total}.`
       : "Revoked.",
-  };
-}
-
-/** Fetches a project's site, looks for its verification tag, and records the outcome.
- *
- * Deliberately an admin action rather than something a founder can trigger. Two reasons: a check a
- * founder could fire and have written would be a founder marking their own homework, and pointing
- * a server at a caller-supplied URL is a request-forgery surface that belongs behind the console's
- * allow-list rather than in front of every signed-in account.
- */
-export async function verifyProjectSite(projectId: string): Promise<ReviewResult> {
-  await requireAdmin();
-  const supabase = getSupabaseAdminClient();
-
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("website_url, verification_token")
-    .eq("id", projectId)
-    .maybeSingle();
-
-  if (projectError || !project) return { ok: false, message: MESSAGES.project_not_found };
-
-  const check = await checkSiteForToken(project.website_url, project.verification_token);
-  if (!check.ok) return { ok: false, message: check.reason };
-
-  const { error } = await supabase.rpc("record_site_verification", {
-    target_project_id: projectId,
-    checked_url: check.finalUrl,
-    tag_found: check.found,
-  });
-
-  if (error) return { ok: false, message: readError(error.message) };
-  revalidateConsole();
-
-  return {
-    ok: check.found,
-    message: check.found
-      ? "Verification tag found. This founder controls the site."
-      : "No verification tag on that page. Ask the founder to add it to their <head>.",
   };
 }
 

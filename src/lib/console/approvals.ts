@@ -11,10 +11,6 @@ export type PendingAchievement = ConsoleAchievement & {
   ownerXpTotal: number | null;
   ownerBuildingLevel: number | null;
   evidence: ClaimEvidence | undefined;
-  /** Only meaningful for a launch claim: whether the product's site was found carrying its
-   * verification tag, and whether it still points at the site that was checked. */
-  siteVerified: boolean;
-  siteUrl: string | null;
 };
 
 /** Head-only count, so the sidebar badge costs one cheap query rather than a full read. */
@@ -50,8 +46,7 @@ export async function listPendingAchievements(): Promise<PendingAchievement[]> {
     supabase.from("profiles").select("id, full_name").in("id", ownerIds),
     supabase.from("plot_claims").select("owner_id, xp_total, building_level").in("owner_id", ownerIds),
     projectIds.length
-      ? supabase.from("projects")
-        .select("id, name, website_url, verified_at, verified_url").in("id", projectIds)
+      ? supabase.from("projects").select("id, name").in("id", projectIds)
       : Promise.resolve({ data: [], error: null } as const),
     supabase.from("achievement_definitions").select("achievement_type, label, scope, group_key, tier"),
     loadEvidenceFor(rows.map((row) => row.id)),
@@ -89,14 +84,6 @@ export async function listPendingAchievements(): Promise<PendingAchievement[]> {
       status: row.status,
       createdAt: row.created_at,
       evidence: evidence.get(row.id),
-      // Verified *and* still pointing at the site that was checked. Repointing a project leaves
-      // verified_url behind, which is exactly when the badge should stop showing.
-      siteVerified: Boolean(
-        row.project_id
-        && projectById.get(row.project_id)?.verified_at
-        && projectById.get(row.project_id)?.verified_url === projectById.get(row.project_id)?.website_url,
-      ),
-      siteUrl: row.project_id ? projectById.get(row.project_id)?.website_url ?? null : null,
     };
   });
 }
